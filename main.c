@@ -23,7 +23,6 @@ int main(int argc, char **argv){
 
 
 
-
 //   Si on doit faire un autre tableau 
 // 	char **tab = malloc(sizeof(char));
 // 	

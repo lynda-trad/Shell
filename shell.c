@@ -21,6 +21,7 @@ int parse_line(char *s, char * *argv[])
 {
 // decoupe la chaine s terminée par \0, mots séparés dun espace dans case dif du tableau, 
 // case NULL à la fin du tableau
+	
 	unsigned int j;
 	j = 0;
 	
@@ -34,6 +35,7 @@ int parse_line(char *s, char * *argv[])
 			++i; //nouvelle case
 		
 		//cpy dans case j
+	
 		while(s[i] != ' ') // use of strpbrk ?
 		{
 
