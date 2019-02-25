@@ -109,7 +109,7 @@ int main()//int argc, char **argv
 		
 		parse_line(s,&tab);
 		
-		simple_cmd(tab);
+// 		simple_cmd(tab);
 		affiche_cmd(tab);
 		
 		free(dir);

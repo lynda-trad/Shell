@@ -1,4 +1,4 @@
-EXEC=shell.exe
+EXEC=shell
 SOURCES=shell.c
 OBJECTS=$(SOURCES:.c=.o)
 CC=gcc
@@ -17,7 +17,7 @@ $(EXEC): $(OBJECTS)
 	$(CC) -o $@ $^ $(LFLAGS)
  
  
-shell :
+shell.exe :
 	$(CC) $(CFLAGS) shell.c -o shell.exe
  
 clean:
