@@ -5,7 +5,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
-
+#include <signal.h>
 
 void affiche_cmd(char *argv[])
 {
@@ -75,31 +75,134 @@ void simple_cmd(char *argv[])  // NOT OK
 	unsigned int i;
 	i = 0;
 	
-	while(argv[i])
+	if(strcmp(argv[0],"exit"))
 	{
-		if(strcmp(argv[i],"exit"))
-		{
-			exit(EXIT_FAILURE);
-		}
-		else 
-		if(strcmp(argv[i],"cd"))
-		{
-			chdir(argv[i+1]);
-			printf("%d",i); // 0134 2 = "cd"
-		}
-		++i;
+		exit(EXIT_FAILURE);
 	}
-	
+	else 
+	if(strcmp(argv[0],"cd"))
+	{
+		chdir(argv[i+1]);
+	}
+	else
+	{
+		int a = fork();
+		if (a == 0) //fils
+			execvp(argv[i],argv);
+	}
 }
 
-/*
 int parse_line_redir(char *s, char **argv[], char **in, char **out)
 {
-	//analyse chaine cm parse_line mais prend en compte redirections < en entree et > en sortie 
-	//nom de fichier en entree et sortie stockés dans in et out respectivement
-	//variable correspondante a null si une redirection n'a pas lieu
+	unsigned int i;
+	unsigned int len;
+	unsigned int wordl;
+	char **tmp;
+	char *debw;
 	
-}*/
+	i = 0;
+	len = 0;
+	tmp = malloc(sizeof(char*) * 1);
+	
+	while(s[i])
+	{
+		while (s[i] == ' ')
+		{
+			++i;
+		}
+		
+		if(s[i] == '<') //in
+		{
+			//gives input to a command
+			out[0] = NULL;
+			int j;
+			j = i+1;
+			
+			while (s[j] == ' ')
+			{
+				++j;
+			}
+			
+			debw = &s[j];
+			wordl = 0;
+			in[0] = malloc(sizeof(char*) * 1);
+			
+			while(s[j] && s[j] != ' ')
+			{
+				++wordl;
+				++j;
+			}
+			
+			if(wordl)
+			{
+				in[0] = malloc(sizeof(char) * wordl + 1);
+				
+				memcpy(in[0], debw, wordl);
+				
+				in[0][wordl]= '\0';
+			}
+		}
+		else if(s[i] == '>') //out
+		{
+			//directs the output of a command into a file
+			in[0] = NULL;
+			int j;
+			j = i+1;
+			
+			while (s[j] == ' ')
+			{
+				++j;
+			}
+			
+			debw = &s[j];
+			wordl = 0;
+			out[0] = malloc(sizeof(char*) * 1);
+			
+			while(s[j] && s[j] != ' ')
+			{
+				++wordl;
+				++j;
+			}
+			
+			if(wordl)
+			{
+				out[0] = malloc(sizeof(char) * wordl + 1);
+				
+				memcpy(out[0], debw, wordl);
+				
+				out[0][wordl]= '\0';
+			}
+		}
+		
+		debw = &s[i];
+		wordl = 0;
+		
+		while(s[i] && s[i] != ' ')
+		{
+			++wordl;
+			++i;
+		}
+		
+		if(wordl)
+		{
+			tmp[len] = malloc(sizeof(char) * wordl + 1);
+			
+			memcpy(tmp[len], debw, wordl);
+			
+			tmp[len][wordl]= '\0';
+			
+			++len;
+			
+			tmp = realloc(tmp, sizeof(char*) * (len + 1));
+		}
+		
+	}
+	
+	tmp[len] = NULL;
+	argv[0] = tmp;
+	
+	return len;	
+}
 
 /*
 int redir_cmd(char *argv[], char*in, char *out)
@@ -113,7 +216,7 @@ int redir_cmd(char *argv[], char*in, char *out)
 
 int main(int argc, char **argv)
 {
-	if(argc >1)
+	if(argc > 1) //nom de fichier en argument
 	{
 		char *dir = malloc(sizeof(char) * 1024);
 		
@@ -129,7 +232,7 @@ int main(int argc, char **argv)
 		
 		parse_line(s,&tab);
 		
-// 		simple_cmd(tab);
+ 		simple_cmd(tab);
 		
 		printf("%s$",getcwd(dir,1024));
 		affiche_cmd(tab);
@@ -150,17 +253,23 @@ int main(int argc, char **argv)
 		
 		fgets(s,1024,stdin);
 		
-		parse_line(s,&tab);
+		char **in = malloc( 100 * sizeof(char*));
+		char **out = malloc( 100 * sizeof(char*));
+//		parse_line(s,&tab);
+		parse_line_redir(s,&tab, in, out);
+		if(in[0]) printf("in : %s\n",in[0]);
+		if(out[0]) printf("out : %s\n",out[0]);
 		
 // 		simple_cmd(tab);
-		
+		printf("\n");
 		affiche_cmd(tab);
 		
 		free(dir);
 		free(tab);
 		free(s);
+		
+// 		sigaction(); //3 == SIGQUIT
 	}
 	
 	exit(EXIT_SUCCESS);
-	
 }
