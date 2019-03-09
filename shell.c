@@ -201,7 +201,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	tmp[len] = NULL;
 	argv[0] = tmp;
 	
-	return len;	
+	return len;
 }
 
 /*
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 		
 		parse_line(s,&tab);
 		
- 		simple_cmd(tab);
+		simple_cmd(tab);
 		
 		printf("%s$",getcwd(dir,1024));
 		affiche_cmd(tab);
@@ -253,14 +253,16 @@ int main(int argc, char **argv)
 		
 		fgets(s,1024,stdin);
 		
+//		parse_line(s,&tab);
+		
+		
 		char **in = malloc( 100 * sizeof(char*));
 		char **out = malloc( 100 * sizeof(char*));
-//		parse_line(s,&tab);
 		parse_line_redir(s,&tab, in, out);
 		if(in[0]) printf("in : %s\n",in[0]);
 		if(out[0]) printf("out : %s\n",out[0]);
 		
-// 		simple_cmd(tab);
+//		simple_cmd(tab);
 		printf("\n");
 		affiche_cmd(tab);
 		
