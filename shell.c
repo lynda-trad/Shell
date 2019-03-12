@@ -227,7 +227,7 @@ int redir_cmd(char *argv[], char*in, char *out)
 }
 
 
-//slice s as command toto | commend2 tata | command3
+//slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
 //pipe connects the standard output of the first command to the standard input of the second command
 
 
