@@ -9,7 +9,6 @@
 
 void affiche_cmd(char *argv[])
 {
-	
 	unsigned int i;
 	i = 0;
 	
@@ -18,8 +17,6 @@ void affiche_cmd(char *argv[])
 		printf("%s ",argv[i]);
 		++i;
 	}
-	
-	printf("\n");
 }
 
 int parse_line(char *s, char * *argv[])
@@ -44,7 +41,7 @@ int parse_line(char *s, char * *argv[])
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ')
+		while(s[i] && s[i] != ' ' )
 		{
 			++wordl;
 			++i;
@@ -72,23 +69,17 @@ int parse_line(char *s, char * *argv[])
 
 void simple_cmd(char *argv[])  // NOT OK
 {
-	unsigned int i;
-	i = 0;
-	
-	if(strcmp(argv[0],"exit"))
+	printf("%s",argv[0]); //il y a un \n a la fin du argv[0] 
+	if(!strcmp(argv[0],"exit"))
 	{
+		printf("exiting");
 		exit(EXIT_FAILURE);
 	}
 	else 
-	if(strcmp(argv[0],"cd"))
+	if(!strcmp(argv[0],"cd"))
 	{
-		chdir(argv[i+1]);
-	}
-	else
-	{
-		int a = fork();
-		if (a == 0) //fils
-			execvp(argv[i],argv);
+		if(argv[1])
+			chdir(argv[1]);
 	}
 }
 
@@ -204,14 +195,40 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	return len;
 }
 
-/*
+
 int redir_cmd(char *argv[], char*in, char *out)
 {
-	//use simple_cmd NOT OK YET
-	 
+	simple_cmd(argv); 
 	
+	int fd = open(argv[0],O_RDONLY);
+	
+	if(out) // write only dans le out 
+	{ 
+		int a = fork();
+		if (a == 0)
+		{
+			int fout = open(out,O_WRONLY);
+			dup2(fout,STDOUT_FILENO);
+			execvp(argv[0],argv);
+		}
+	}
+	else
+	if(in) // read only dans le in
+	{  
+		int a = fork();
+		if (a == 0)
+		{
+			int fin = open(out,O_RDONLY);
+			dup2(fin,STDIN_FILENO);
+			execvp(argv[0],argv);
+		}
+	}
+	return fd;
 }
-*/
+
+
+
+//pipe connects the standard output of the first command to the standard input of the second command
 
 
 int main(int argc, char **argv)
@@ -228,20 +245,20 @@ int main(int argc, char **argv)
 		if (fd < 0)
 			exit(EXIT_FAILURE);
 		
+		printf("%s$ ",getcwd(dir,1024));
+		affiche_cmd(tab);
+		
 		read(fd, s, 1024);
 		
 		parse_line(s,&tab);
 		
 		simple_cmd(tab);
 		
-		printf("%s$",getcwd(dir,1024));
-		affiche_cmd(tab);
-		
 		free(dir);
 		free(tab);
 		free(s);
 	}
-	else while(1) //exit avec CTRL+C et pas CTRL+D -> how ?
+	else while(1)
 	{
 		char *dir = malloc(sizeof(char) * 1024);
 		
@@ -249,29 +266,33 @@ int main(int argc, char **argv)
 		
 		char *s = malloc(1024 * sizeof(char));
 		
-		printf("%s$",getcwd(dir,1024));
+		printf("%s$ ",getcwd(dir,1024));
 		
-		fgets(s,1024,stdin);
+		char *ex;
+		ex = fgets(s,1024,stdin);
 		
-//		parse_line(s,&tab);
+		if(ex == 0) //Quit with CTRL+D
+		{
+			printf("\n");
+			break;
+		}
 		
+		parse_line(s,&tab);
+		affiche_cmd(tab);
 		
+		simple_cmd(tab);
+		
+		/*
 		char **in = malloc( 100 * sizeof(char*));
 		char **out = malloc( 100 * sizeof(char*));
 		parse_line_redir(s,&tab, in, out);
 		if(in[0]) printf("in : %s\n",in[0]);
 		if(out[0]) printf("out : %s\n",out[0]);
-		
-//		simple_cmd(tab);
-		printf("\n");
-		affiche_cmd(tab);
+		*/
 		
 		free(dir);
 		free(tab);
 		free(s);
-		
-// 		sigaction(); //3 == SIGQUIT
 	}
-	
 	exit(EXIT_SUCCESS);
 }
