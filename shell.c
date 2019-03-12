@@ -69,7 +69,7 @@ int parse_line(char *s, char * *argv[])
 
 void simple_cmd(char *argv[])  // NOT OK
 {
-	printf("%s",argv[0]); //il y a un \n a la fin du argv[0] 
+// 	printf("%s",argv[0]); //il y a un \n a la fin du argv[0] 
 	if(!strcmp(argv[0],"exit"))
 	{
 		printf("exiting");
@@ -227,7 +227,7 @@ int redir_cmd(char *argv[], char*in, char *out)
 }
 
 
-
+//slice s as command toto | commend2 tata | command3
 //pipe connects the standard output of the first command to the standard input of the second command
 
 
