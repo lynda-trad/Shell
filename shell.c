@@ -87,10 +87,9 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 {
 	unsigned int i;
 	unsigned int len;
-	unsigned int wordl;
-	char **tmp;
-	char *debw;
-	
+	unsigned int wordl; //lenth de chaque mot dans la commande
+	char **tmp; // argv
+	char *debw; // debut du mot quon va memcpy
 	i = 0;
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
@@ -192,7 +191,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	tmp[len] = NULL;
 	argv[0] = tmp;
 	
-	return len;
+	return i;
 }
 
 
@@ -226,9 +225,131 @@ int redir_cmd(char *argv[], char*in, char *out)
 	return fd;
 }
 
-
+int parse_line_pipes(char *s, char **argv[], char **in, char **out)
+{
 //slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
 //pipe connects the standard output of the first command to the standard input of the second command
+	
+	//malloc grand tableau puis malloc chaque case pour chaque commande
+	unsigned int i; //case de la chaine s
+	unsigned int len; //length du tableau
+	i = 0;
+	len = 0;
+	
+	while(s[i])
+	{
+		i = parse_line_redir(&s[i], argv[len], in, out); // on fait comme parseline redir pour chaque case len du tableau argv
+		
+		while (s[i] == ' ')
+		{
+			++i;
+		}
+		
+		if(s[i] == '|') //pipe
+		{
+			++len;
+		}
+		
+		
+		
+	{
+	{
+		if(s[i] == '<') //in
+		{
+			//gives input to a command
+			out[0] = NULL;
+			int j;
+			j = i+1;
+			
+			while (s[j] == ' ')
+			{
+				++j;
+			}
+			
+			debw = &s[j];
+			wordl = 0;
+			in[0] = malloc(sizeof(char*) * 1);
+			
+			while(s[j] && s[j] != ' ')
+			{
+				++wordl;
+				++j;
+			}
+			
+			if(wordl)
+			{
+				in[0] = malloc(sizeof(char) * wordl + 1);
+				
+				memcpy(in[0], debw, wordl);
+				
+				in[0][wordl]= '\0';
+			}
+		}
+		else if(s[i] == '>') //out
+		{
+			//directs the output of a command into a file
+			in[0] = NULL;
+			int j;
+			j = i+1;
+			
+			while (s[j] == ' ')
+			{
+				++j;
+			}
+			
+			debw = &s[j];
+			wordl = 0;
+			out[0] = malloc(sizeof(char*) * 1);
+			
+			while(s[j] && s[j] != ' ')
+			{
+				++wordl;
+				++j;
+			}
+			
+			if(wordl)
+			{
+				out[0] = malloc(sizeof(char) * wordl + 1);
+				
+				memcpy(out[0], debw, wordl);
+				
+				out[0][wordl]= '\0';
+			}
+		}
+		
+		debw = &s[i];
+		wordl = 0;
+		
+		while(s[i] && s[i] != ' ')
+		{
+			++wordl;
+			++i;
+		}
+		
+		if(wordl)
+		{
+			tmp[len] = malloc(sizeof(char) * wordl + 1);
+			
+			memcpy(tmp[len], debw, wordl);
+			
+			tmp[len][wordl]= '\0';
+			
+			++len;
+			
+			tmp = realloc(tmp, sizeof(char*) * (len + 1));
+		}
+		
+	}
+	
+	tmp[len] = NULL;
+	argv[0] = tmp;
+	}
+	
+		}
+	}
+}
+
+
 
 
 int main(int argc, char **argv)
