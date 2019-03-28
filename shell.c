@@ -217,7 +217,7 @@ int redir_cmd(char *argv[], char*in, char *out)
 		int a = fork();
 		if (a == 0)
 		{
-			int fin = open(out,O_RDONLY);
+			int fin = open(in,O_RDONLY);
 			dup2(fin,STDIN_FILENO);
 			execvp(argv[0],argv);
 		}
@@ -238,7 +238,7 @@ int parse_line_pipes(char *s, char **argv[], char **in, char **out)
 	
 	while(s[i])
 	{
-		i = parse_line_redir(&s[i], argv[len], in, out); // on fait comme parseline redir pour chaque case len du tableau argv
+		i = parse_line_redir(&s[i], argv+len, in, out); // on fait comme parseline redir pour chaque case len du tableau argv
 		
 		while (s[i] == ' ')
 		{
@@ -249,9 +249,12 @@ int parse_line_pipes(char *s, char **argv[], char **in, char **out)
 		{
 			++len;
 		}
-		
-		
-		
+	}
+	return i;
+}
+
+
+/*
 	{
 	{
 		if(s[i] == '<') //in
@@ -344,11 +347,29 @@ int parse_line_pipes(char *s, char **argv[], char **in, char **out)
 	tmp[len] = NULL;
 	argv[0] = tmp;
 	}
-	
-		}
 	}
-}
+*/
 
+
+//pour pipe
+int redir_cmd_pipe(char *argv[], char*in, char *out)
+{
+	simple_cmd(argv); 
+	
+	int fd = open(argv[0],O_RDONLY);
+	
+	if(out && in) // write only dans le out 
+	{ 
+		int fin = open(in,O_RDONLY);
+		int fout = open(out,O_WRONLY);
+		int fildes[2];
+		fildes[0] = fin;
+		fildes[1] = fout;
+		pipe(fildes);
+		execvp(argv[0],argv);
+	}
+	return fd;
+}
 
 
 
