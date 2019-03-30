@@ -214,24 +214,30 @@ int redir_cmd(char *argv[], char*in, char *out)
 	
 	if(out) // write only dans le out 
 	{ 
-		int a = fork();
-		if (a == 0)
+		pid_t p = fork();
+		int status;
+		if (p == 0)
 		{
 			int fout = open(out,O_WRONLY);
 			dup2(fout,STDOUT_FILENO);
 			execvp(argv[0],argv);
 		}
+		else
+			wait(&status);
 	}
 	else
 	if(in) // read only dans le in
 	{  
-		int a = fork();
-		if (a == 0)
+		pid_t p = fork();
+		int status;
+		if (p == 0)
 		{
 			int fin = open(in,O_RDONLY);
 			dup2(fin,STDIN_FILENO);
 			execvp(argv[0],argv);
 		}
+		else
+			wait(&status);
 	}
 	return fd;
 }
@@ -279,7 +285,13 @@ int redir_cmd_pipe(char *argv[], char*in, char *out)
 		fildes[0] = fin;
 		fildes[1] = fout;
 		pipe(fildes);
-		execvp(argv[0],argv);
+		
+		pid_t p = fork();
+		int status;
+		if (p == 0)
+			execvp(argv[0],argv);
+		else
+			wait(&status);
 	}
 	return fd;
 }
