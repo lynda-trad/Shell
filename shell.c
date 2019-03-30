@@ -31,7 +31,7 @@ int parse_line(char *s, char * *argv[])
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
 	
-	while(s[i])
+	while(s[i] && s[i] != '\n')
 	{
 		while (s[i] ==' ')
 		{
@@ -41,7 +41,7 @@ int parse_line(char *s, char * *argv[])
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ' )
+		while(s[i] && s[i] != ' ' && s[i] != '\n')
 		{
 			++wordl;
 			++i;
@@ -70,9 +70,10 @@ int parse_line(char *s, char * *argv[])
 void simple_cmd(char *argv[])  // NOT OK
 {
 // 	printf("%s",argv[0]); //il y a un \n a la fin du argv[0] 
+	if(!*argv)
+		return;
 	if(!strcmp(argv[0],"exit"))
 	{
-		printf("exiting");
 		exit(EXIT_FAILURE);
 	}
 	else 
@@ -81,15 +82,23 @@ void simple_cmd(char *argv[])  // NOT OK
 		if(argv[1])
 			chdir(argv[1]);
 	}
+	else
+	{
+		pid_t p = fork();
+		if(p == 0)
+		{
+			execvp(argv[0],argv);
+		}
+	}
 }
 
 int parse_line_redir(char *s, char **argv[], char **in, char **out)
 {
 	unsigned int i;
 	unsigned int len;
-	unsigned int wordl; //lenth de chaque mot dans la commande
-	char **tmp; // argv
-	char *debw; // debut du mot quon va memcpy
+	unsigned int wordl; //length de chaque mot dans la commande
+	char **tmp; 		// argv
+	char *debw; 		// debut du mot quon va memcpy
 	i = 0;
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
@@ -227,8 +236,8 @@ int redir_cmd(char *argv[], char*in, char *out)
 
 int parse_line_pipes(char *s, char **argv[], char **in, char **out)
 {
-//slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
-//pipe connects the standard output of the first command to the standard input of the second command
+// slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
+// pipe connects the standard output of the first command to the standard input of the second command
 	
 	//malloc grand tableau puis malloc chaque case pour chaque commande
 	unsigned int i; //case de la chaine s
@@ -370,7 +379,6 @@ int redir_cmd_pipe(char *argv[], char*in, char *out)
 	}
 	return fd;
 }
-
 
 
 int main(int argc, char **argv)
