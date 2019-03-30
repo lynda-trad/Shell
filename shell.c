@@ -103,7 +103,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
 	
-	while(s[i])
+	while(s[i] && s[i] != '\n')
 	{
 		while (s[i] == ' ')
 		{
@@ -176,7 +176,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ')
+		while(s[i] && s[i] != ' ' && s[i] != '\n')
 		{
 			++wordl;
 			++i;
