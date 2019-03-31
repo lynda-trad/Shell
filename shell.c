@@ -14,9 +14,10 @@ void affiche_cmd(char *argv[])
 	
 	while(argv[i])
 	{
-		printf("%s ",argv[i]);
+		printf("%s",argv[i]);
 		++i;
 	}
+	printf("\n");
 }
 
 int parse_line(char *s, char * *argv[])
@@ -69,9 +70,9 @@ int parse_line(char *s, char * *argv[])
 
 void simple_cmd(char *argv[])
 {
-// 	printf("%s",argv[0]); //il y a un \n a la fin du argv[0] 
 	if(!*argv)
 		return;
+	
 	if(!strcmp(argv[0],"exit"))
 	{
 		exit(EXIT_FAILURE);
@@ -95,6 +96,73 @@ void simple_cmd(char *argv[])
 	}
 }
 
+int parse_in_out(char *s, int i, char **in, char **out)
+{
+	
+	char *debw;
+	unsigned int wordl;
+	
+	wordl = 0;
+	
+	if(s[i] == '<') //in
+	{ //gives input to a command
+		++i;
+		
+		while (s[i] == ' ')
+		{
+			++i;
+		}
+		
+		debw = &s[i];
+		wordl = 0;
+		in[0] = malloc(sizeof(char*) * 1);
+		
+		while(s[i] && s[i] != ' ' && s[i] != '\n')
+		{
+			++wordl;
+			++i;
+		}
+		
+		if(wordl)
+		{
+			in[0] = malloc(sizeof(char) * wordl + 1);
+			
+			memcpy(in[0], debw, wordl);
+			
+			in[0][wordl]= '\0';
+		}
+	}
+	else if(s[i] == '>') //out
+	{ //directs the output of a command into a file
+		++i;
+		
+		while (s[i] == ' ')
+		{
+			++i;
+		}
+		
+		debw = &s[i];
+		wordl = 0;
+		out[0] = malloc(sizeof(char*) * 1);
+		
+		while(s[i] && s[i] != ' ' && s[i] != '\n')
+		{
+			++wordl;
+			++i;
+		}
+		
+		if(wordl)
+		{
+			out[0] = malloc(sizeof(char) * wordl + 1);
+			
+			memcpy(out[0], debw, wordl);
+			
+			out[0][wordl]= '\0';
+		}
+	}
+	return i;
+}
+
 int parse_line_redir(char *s, char **argv[], char **in, char **out)
 {
 	unsigned int i;
@@ -106,6 +174,9 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
 	
+	in[0] = NULL;
+	out[0] = NULL;
+	
 	while(s[i] && s[i] != '\n')
 	{
 		while (s[i] == ' ')
@@ -113,67 +184,14 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 			++i;
 		}
 		
-		if(s[i] == '<') //in
+		if(s[i] == '<')
 		{
-			//gives input to a command
-			out[0] = NULL;
-			int j;
-			j = i+1;
-			
-			while (s[j] == ' ')
-			{
-				++j;
-			}
-			
-			debw = &s[j];
-			wordl = 0;
-			in[0] = malloc(sizeof(char*) * 1);
-			
-			while(s[j] && s[j] != ' ')
-			{
-				++wordl;
-				++j;
-			}
-			
-			if(wordl)
-			{
-				in[0] = malloc(sizeof(char) * wordl + 1);
-				
-				memcpy(in[0], debw, wordl);
-				
-				in[0][wordl]= '\0';
-			}
+			i = parse_in_out(s,i,in,out);
 		}
-		else if(s[i] == '>') //out
+		
+		if(s[i] == '>')
 		{
-			//directs the output of a command into a file
-			in[0] = NULL;
-			int j;
-			j = i+1;
-			
-			while (s[j] == ' ')
-			{
-				++j;
-			}
-			
-			debw = &s[j];
-			wordl = 0;
-			out[0] = malloc(sizeof(char*) * 1);
-			
-			while(s[j] && s[j] != ' ')
-			{
-				++wordl;
-				++j;
-			}
-			
-			if(wordl)
-			{
-				out[0] = malloc(sizeof(char) * wordl + 1);
-				
-				memcpy(out[0], debw, wordl);
-				
-				out[0][wordl]= '\0';
-			}
+			i = parse_in_out(s,i,in,out);
 		}
 		
 		debw = &s[i];
@@ -206,21 +224,37 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	return i;
 }
 
-int redir_cmd(char *argv[], char*in, char *out)
+
+int redir_cmd(char *argv[], char *in, char *out)
 {
-	simple_cmd(argv); 
-	
-	int fd = open(argv[0],O_RDONLY);
-	
-	if(out) // write only dans le out 
+	if(in && out)
+	{
+		pid_t p = fork();
+		int status;
+		if (p == 0)
+		{
+			int fin = open(in,O_RDONLY);
+			int fout = open(out,O_WRONLY|O_TRUNC);
+			
+			dup2(fin,STDIN_FILENO);
+			dup2(fout,STDOUT_FILENO);
+			execvp(argv[0],argv);
+			close(fin);
+			close(fout);
+		}
+		else
+			wait(&status);
+	}
+	else	if(out) // write only dans le out 
 	{ 
 		pid_t p = fork();
 		int status;
 		if (p == 0)
 		{
-			int fout = open(out,O_WRONLY);
+			int fout = open(out,O_WRONLY|O_TRUNC);
 			dup2(fout,STDOUT_FILENO);
 			execvp(argv[0],argv);
+			close(fout);
 		}
 		else
 			wait(&status);
@@ -235,14 +269,15 @@ int redir_cmd(char *argv[], char*in, char *out)
 			int fin = open(in,O_RDONLY);
 			dup2(fin,STDIN_FILENO);
 			execvp(argv[0],argv);
+			close(fin);
 		}
 		else
 			wait(&status);
 	}
-	return fd;
+	return 0;
 }
 
-int parse_line_pipes(char *s, char **argv[], char **in, char **out)
+int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
 // slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
 // pipe connects the standard output of the first command to the standard input of the second command
@@ -255,17 +290,14 @@ int parse_line_pipes(char *s, char **argv[], char **in, char **out)
 	
 	while(s[i])
 	{
-		i = parse_line_redir(&s[i], argv+len, in, out); // on fait comme parseline redir pour chaque case len du tableau argv
-		
-		while (s[i] == ' ')
-		{
-			++i;
-		}
 		
 		if(s[i] == '|') //pipe
 		{
 			++len;
+			argv[len] = malloc( 100 * sizeof(char**));
 		}
+		
+		i = parse_line_redir(&s[i], argv[len], in, out);
 	}
 	return i;
 }
@@ -311,11 +343,12 @@ int main(int argc, char **argv)
 			exit(EXIT_FAILURE);
 		
 		printf("%s$ ",getcwd(dir,1024));
-// 		affiche_cmd(tab);
 		
 		read(fd, s, 1024);
 		
 		parse_line(s,&tab);
+		
+		affiche_cmd(tab);
 		
 		simple_cmd(tab);
 		
@@ -331,6 +364,8 @@ int main(int argc, char **argv)
 		
 		char *s = malloc(1024 * sizeof(char));
 		
+		char ***tab_pipe = malloc( 100 * sizeof(char**));
+		
 		printf("%s$ ",getcwd(dir,1024));
 		
 		char *ex;
@@ -342,18 +377,17 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		parse_line(s,&tab);
-// 		affiche_cmd(tab);
+		char *in;
+		char *out;
 		
-		simple_cmd(tab);
+// 		parse_line_redir(s,&tab, &in, &out);
 		
-		/*
-		char **in = malloc( 100 * sizeof(char*));
-		char **out = malloc( 100 * sizeof(char*));
-		parse_line_redir(s,&tab, in, out);
-		if(in[0]) printf("in : %s\n",in[0]);
-		if(out[0]) printf("out : %s\n",out[0]);
-		*/
+		parse_line_pipes(s,&tab_pipe, &in, &out);
+		
+		if(in || out)
+			redir_cmd(tab,in,out);
+		else
+			simple_cmd(tab);
 		
 		free(dir);
 		free(tab);
