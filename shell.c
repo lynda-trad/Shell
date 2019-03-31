@@ -186,12 +186,12 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 		
 		if(s[i] == '<')
 		{
-			i = parse_in_out(s,i,in,out);
+			i = (unsigned int) parse_in_out(s,i,in,out);
 		}
 		
 		if(s[i] == '>')
 		{
-			i = parse_in_out(s,i,in,out);
+			i = (unsigned int) parse_in_out(s,i,in,out);
 		}
 		
 		debw = &s[i];
@@ -277,28 +277,52 @@ int redir_cmd(char *argv[], char *in, char *out)
 	return 0;
 }
 
+/*
+static unsigned int skip_space(const char *s, unsigned int i)
+{
+    while (s[i] == ' ' || s[i] == '\t')
+    {
+        ++i;
+    }
+    return i;
+}
+*/
+
+unsigned int skip_space(const char *s, unsigned int i)
+{
+	while (s[i] == ' ' || s[i] == '\t')
+	{
+		++i;
+	}
+	return i;
+}
 int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
-// slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
-// pipe connects the standard output of the first command to the standard input of the second command
+	// slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
+	// pipe connects the standard output of the first command to the standard input of the second command
 	
 	//malloc grand tableau puis malloc chaque case pour chaque commande
-	unsigned int i; //case de la chaine s
-	unsigned int len; //length du tableau
-	i = 0;
-	len = 0;
+	unsigned int    i; //case de la chaine s
+	unsigned int    len; //length du tableau
+	char            *unused;
 	
-	while(s[i])
+	len = 1;
+	argv[0] = malloc(sizeof(char **) * 2);
+	i = skip_space(s, 0);
+	i = (unsigned int) parse_line_redir(&s[i], argv[0], in, out);
+	i = skip_space(s, i);
+	
+	while(s[i] == '|')
 	{
-		
-		if(s[i] == '|') //pipe
-		{
-			++len;
-			argv[len] = malloc( 100 * sizeof(char**));
-		}
-		
-		i = parse_line_redir(&s[i], argv[len], in, out);
+		++i;
+		argv[0] = realloc(argv[0], sizeof(char **) * (len + 2));
+		i = skip_space(s, i);
+		i = (unsigned int) parse_line_redir(&s[i], &argv[0][len], &unused, out);
+		i = skip_space(s, i);
+		++len;
 	}
+	
+	argv[0][len] = NULL;
 	return i;
 }
 
@@ -326,6 +350,18 @@ int redir_cmd_pipe(char *argv[], char*in, char *out)
 			wait(&status);
 	}
 	return fd;
+}
+
+void affiche_cmd_pipe(char ***str)
+{
+	unsigned int i;
+	
+	i = 0;
+	while (str[i])
+	{
+		affiche_cmd(str[i]);
+		++i;
+	}
 }
 
 int main(int argc, char **argv)
@@ -360,15 +396,20 @@ int main(int argc, char **argv)
 	{
 		char *dir = malloc(sizeof(char) * 1024);
 		
-		char **tab = malloc( 100 * sizeof(char*));
+		char ***tab;
+// 		char **tab = malloc( 100 * sizeof(char*));
+// 		char ***tab_pipe = malloc( 100 * sizeof(char**));
 		
 		char *s = malloc(1024 * sizeof(char));
 		
-		char ***tab_pipe = malloc( 100 * sizeof(char**));
+		
+		char *in;
+		char *out;
+		
+		char *ex;
 		
 		printf("%s$ ",getcwd(dir,1024));
 		
-		char *ex;
 		ex = fgets(s,1024,stdin);
 		
 		if(ex == 0) //Quit with CTRL+D
@@ -377,17 +418,16 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		char *in;
-		char *out;
 		
 // 		parse_line_redir(s,&tab, &in, &out);
 		
-		parse_line_pipes(s,&tab_pipe, &in, &out);
+		parse_line_pipes(s,&tab, &in, &out);
+		affiche_cmd_pipe(tab);
 		
-		if(in || out)
-			redir_cmd(tab,in,out);
-		else
-			simple_cmd(tab);
+// 		if(in || out)
+// 			redir_cmd(tab,in,out);
+// 		else
+// 			simple_cmd(tab);
 		
 		free(dir);
 		free(tab);
