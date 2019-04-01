@@ -303,8 +303,6 @@ unsigned int skip_space(const char *s, unsigned int i)
 
 int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
-	// pipe connects the standard output of the first command to the standard input of the second command
-	
 	unsigned int i;	//case de la chaine s
 	unsigned int len; 	//length du tableau
 	char *unused; 		//in possible que pour premiere commande 
@@ -328,6 +326,8 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	argv[0][len] = NULL;
 	return i;
 }
+
+// pipe connects the standard output of the first command to the standard input of the second command
 
 /*	command 1 | command 2
  *	
@@ -370,14 +370,14 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 	return ret;
 }
 
-int redir_cmd_pipe(char **argv[], char *in, char *out)
+char *redir_cmd_pipe_first(char **argv[], char *in)
 {
 	int fd[2];
 	char *buff;
 	
 	if(pipe(fd))
 	{
-		return 0;
+		return NULL;
 	}
 	
 	if (fork() == 0) //fils
@@ -386,11 +386,27 @@ int redir_cmd_pipe(char **argv[], char *in, char *out)
 		
 		dup2(fd[1], STDOUT_FILENO);
 		
+		int fin = open(in,O_RDONLY);
+		dup2(fin,STDIN_FILENO);
+		
 		close(fd[1]);
 		
-		execvp(argv[0], argv); //prob
+		execvp(argv[0][0], argv[0]); //prob
 		
-		/*
+		close(fin);
+		
+	}
+	
+	close(fd[1]);
+	
+	buff = read_from_fd(fd[0]);
+	
+	close(fd[0]);
+	
+	return buff;
+}
+
+/*
 		if(out && in) // write only dans le out
 		{
 			int fin = open(in,O_RDONLY);
@@ -407,19 +423,13 @@ int redir_cmd_pipe(char **argv[], char *in, char *out)
 			else
 				wait(&status);
 		}
-		*/
-		
-	}
-	
-	close(fd[1]);
-	
-	buff = read_from_fd(fd[0]);
-	
-	close(fd[0]);
-	
-	return buff;
-}
+*/
 
+void redir_cmd_pipe(char **argv[], char *in, char *out)
+{
+	if(in || out)
+		printf("%s, redir_cmd_pipe_first",argv[0][0]);//appelle redir_cmd_pipe_first sur argv[0]
+}
 
 
 int main(int argc, char **argv)
