@@ -550,16 +550,18 @@ int main(int argc, char **argv)
 			break;
 		}
 		
+//		parse_line(s,&tab);
 		parse_line_pipes(s,&tab, &in, &out);
 		
-		redir_cmd_pipe(tab, in, out);
 		
 		/*
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
-			pipe_cmd(tab, in, out);
+			simple_cmd(tab);
 		*/
+		redir_cmd_pipe(tab, in, out);
+		
 		
 		printf("\n");
 		
