@@ -10,6 +10,11 @@
 #define BUFF_SIZE 100
 //pour les pipes
 
+static void handler()
+{
+	//ignore the signal
+}
+
 void affiche_cmd(char *argv[])
 {
 	unsigned int i;
@@ -380,7 +385,7 @@ char *redir_cmd_pipe_first(char **argv[], char *in)
 		return NULL;
 	}
 	
-	if (fork() == 0) //fils
+	if (fork() == 0)
 	{
 		close(fd[0]);
 		
@@ -391,7 +396,7 @@ char *redir_cmd_pipe_first(char **argv[], char *in)
 		
 		close(fd[1]);
 		
-		execvp(argv[0][0], argv[0]); //prob
+		execvp(argv[0][0], argv[0]);
 		
 		close(fin);
 		
@@ -434,6 +439,13 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 
 int main(int argc, char **argv)
 {
+	//ignore CTRL+Z and CTRL+C
+	struct sigaction act;
+	act.sa_handler = &handler;
+	act.sa_flags = SA_RESTART;
+	sigaction(SIGTSTP, &act, NULL);
+	sigaction(SIGINT, &act, NULL);
+	
 	if(argc > 1) // nom de fichier en argument
 	{
 		char *dir = malloc(sizeof(char) * 1024);
@@ -462,6 +474,7 @@ int main(int argc, char **argv)
 	}
 	else while(1)
 	{
+		
 		char *dir = malloc(sizeof(char) * 1024);
 		
 		char ***tab;
