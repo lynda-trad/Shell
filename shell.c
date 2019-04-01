@@ -302,9 +302,9 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
 	// pipe connects the standard output of the first command to the standard input of the second command
 	
-	unsigned int i; //case de la chaine s
-	unsigned int len; //length du tableau
-	char *unused; //in possible que pour premiere commande 
+	unsigned int i;	//case de la chaine s
+	unsigned int len; 	//length du tableau
+	char *unused; 		//in possible que pour premiere commande 
 	
 	len = 1;
 	argv[0] = malloc(sizeof(char **) * 2);
@@ -326,64 +326,43 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	return i;
 }
 
-//pour pipe test le avec ls -l|pipe et ensuite cat < txt.txt | cat > michel.txt
-int pipe_cmd(char **argv[], char *in, char *out)
+/*	command 1 | command 2
+ *	
+ *	équivaut a
+ * 
+ *	command 1 > command 2
+ *	command 2 < command 1
+ */
+
+//test : ls -l|pipe  //  cat < txt.txt | cat > michel.txt
+int redir_cmd(char **argv[], char *in, char *out) //pipe_cmd
 {
 	unsigned len;
 	len = 0;
 	
 	++len;
-	//entre les deux faut faire des pipes entre celui davant et celui dapres
 	while(argv[len])
 	{
-		
 		if(len == 0) // premiere commande
 			redir_cmd(argv[len],in,NULL);
 		
-		/*
-		 
-		 command 1 | command 2
-		 
-		 équivaut a
-		 
-		 command 1 > command 2
-		 command 2 < command 1
-		 
-		 */
+		
+		// faire pipes entre celui davant et celui dapres
+		int fin = open(in,O_RDONLY);
+		dup2(fin,STDIN_FILENO);
+		
+		int fout = open(out,O_WRONLY|O_TRUNC);
+		dup2(fout,STDOUT_FILENO);
 		
 		execvp(argv[len][0],argv[len]);
 		
+		execvp(argv[len][0],argv[len]);
 		
 		if (!argv[len+1]) // derniere commande
 			redir_cmd(argv[len],NULL,out);
 		
 		++len;
 	}
-	
-	/*
-	//previous
-	int fd;
-	fd = open(argv[0],O_RDONLY);
-	
-	if(out && in) // write only dans le out 
-	{ 
-		int fin = open(in,O_RDONLY);
-		int fout = open(out,O_WRONLY|O_TRUNC);
-		
-		int fildes[2];
-		fildes[0] = fin;
-		fildes[1] = fout;
-		pipe(fildes);
-		
-		pid_t p = fork();
-		int status;
-		if (p == 0)
-			execvp(argv[0],argv);
-		else
-			wait(&status);
-	}
-	*/
-	
 	
 	return 0;
 }
