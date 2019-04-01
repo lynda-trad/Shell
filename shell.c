@@ -20,6 +20,18 @@ void affiche_cmd(char *argv[])
 	printf("\n");
 }
 
+void affiche_cmd_pipe(char **str[]) //char ***
+{
+	unsigned int i;
+	
+	i = 0;
+	while (str[i])
+	{
+		affiche_cmd(str[i]);
+		++i;
+	}
+}
+
 int parse_line(char *s, char * *argv[])
 {
 	unsigned int i;
@@ -259,8 +271,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 		else
 			wait(&status);
 	}
-	else
-	if(in) // read only dans le in
+	else if(in) // read only dans le in
 	{  
 		pid_t p = fork();
 		int status;
@@ -277,16 +288,6 @@ int redir_cmd(char *argv[], char *in, char *out)
 	return 0;
 }
 
-/*
-static unsigned int skip_space(const char *s, unsigned int i)
-{
-    while (s[i] == ' ' || s[i] == '\t')
-    {
-        ++i;
-    }
-    return i;
-}
-*/
 
 unsigned int skip_space(const char *s, unsigned int i)
 {
@@ -296,15 +297,16 @@ unsigned int skip_space(const char *s, unsigned int i)
 	}
 	return i;
 }
+
 int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
 	// slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
 	// pipe connects the standard output of the first command to the standard input of the second command
 	
 	//malloc grand tableau puis malloc chaque case pour chaque commande
-	unsigned int    i; //case de la chaine s
-	unsigned int    len; //length du tableau
-	char            *unused;
+	unsigned int i; //case de la chaine s
+	unsigned int len; //length du tableau
+	char *unused; //in possible que pour premiere commande 
 	
 	len = 1;
 	argv[0] = malloc(sizeof(char **) * 2);
@@ -326,17 +328,50 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	return i;
 }
 
-//pour pipe
-int redir_cmd_pipe(char *argv[], char*in, char *out)
+//pour pipe test le avec ls -l|pipe et ensuite cat < txt.txt | cat > michel.txt
+int pipe_cmd(char **argv[], char *in, char *out)
 {
-	simple_cmd(argv); 
+	unsigned len;
+	len = 0;
 	
-	int fd = open(argv[0],O_RDONLY);
+	++len;
+	//entre les deux faut faire des pipes entre celui davant et celui dapres
+	while(argv[len])
+	{
+		
+		if(len == 0) // premiere commande
+			redir_cmd(argv[len],in,NULL);
+		
+		/*
+		 
+		 command 1 | command 2
+		 
+		 équivaut a
+		 
+		 command 1 > command 2
+		 command 2 < command 1
+		 
+		 */
+		
+		execvp(argv[len][0],argv[len]);
+		
+		
+		if (!argv[len+1]) // derniere commande
+			redir_cmd(argv[len],NULL,out);
+		
+		++len;
+	}
+	
+	/*
+	//previous
+	int fd;
+	fd = open(argv[0],O_RDONLY);
 	
 	if(out && in) // write only dans le out 
 	{ 
 		int fin = open(in,O_RDONLY);
-		int fout = open(out,O_WRONLY);
+		int fout = open(out,O_WRONLY|O_TRUNC);
+		
 		int fildes[2];
 		fildes[0] = fin;
 		fildes[1] = fout;
@@ -349,20 +384,11 @@ int redir_cmd_pipe(char *argv[], char*in, char *out)
 		else
 			wait(&status);
 	}
-	return fd;
+	*/
+	
+	return 0;
 }
 
-void affiche_cmd_pipe(char ***str)
-{
-	unsigned int i;
-	
-	i = 0;
-	while (str[i])
-	{
-		affiche_cmd(str[i]);
-		++i;
-	}
-}
 
 int main(int argc, char **argv)
 {
@@ -422,12 +448,15 @@ int main(int argc, char **argv)
 // 		parse_line_redir(s,&tab, &in, &out);
 		
 		parse_line_pipes(s,&tab, &in, &out);
-		affiche_cmd_pipe(tab);
+// 		affiche_cmd_pipe(tab);
 		
-// 		if(in || out)
-// 			redir_cmd(tab,in,out);
-// 		else
-// 			simple_cmd(tab);
+
+		if(in || out)
+			redir_cmd(*tab,in,out);
+		else
+			pipe_cmd(tab, in, out);
+// 			simple_cmd(*tab); 
+		printf("\n");
 		
 		free(dir);
 		free(tab);
