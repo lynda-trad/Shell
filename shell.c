@@ -20,7 +20,7 @@ void affiche_cmd(char *argv[])
 	printf("\n");
 }
 
-void affiche_cmd_pipe(char **str[]) //char ***
+void affiche_cmd_pipe(char **str[])
 {
 	unsigned int i;
 	
