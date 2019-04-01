@@ -384,6 +384,7 @@ int pipe_cmd(char **argv[], char *in, char *out)
 	}
 	*/
 	
+	
 	return 0;
 }
 
@@ -448,7 +449,6 @@ int main(int argc, char **argv)
 		parse_line_pipes(s,&tab, &in, &out);
 // 		affiche_cmd_pipe(tab);
 		
-
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
