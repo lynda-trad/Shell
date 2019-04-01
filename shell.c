@@ -423,7 +423,6 @@ int main(int argc, char **argv)
 		
 		char ***tab;
 // 		char **tab = malloc( 100 * sizeof(char*));
-// 		char ***tab_pipe = malloc( 100 * sizeof(char**));
 		
 		char *s = malloc(1024 * sizeof(char));
 		
