@@ -443,15 +443,14 @@ int main(int argc, char **argv)
 		}
 		
 // 		parse_line_redir(s,&tab, &in, &out);
-		
 		parse_line_pipes(s,&tab, &in, &out);
+		
 // 		affiche_cmd_pipe(tab);
 		
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
 			pipe_cmd(tab, in, out);
-// 			simple_cmd(*tab); 
 		printf("\n");
 		
 		free(dir);
