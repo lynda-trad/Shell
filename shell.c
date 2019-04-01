@@ -433,7 +433,8 @@ char *redir_cmd_pipe_first(char **argv[], char *in)
 void redir_cmd_pipe(char **argv[], char *in, char *out)
 {
 	if(in || out)
-		printf("%s, redir_cmd_pipe_first",argv[0][0]);//appelle redir_cmd_pipe_first sur argv[0]
+		printf("%s, redir_cmd_pipe_first",argv[0][0]);
+	//appelle redir_cmd_pipe_first sur argv[0]
 }
 
 
