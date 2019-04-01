@@ -7,6 +7,9 @@
 #include <fcntl.h>
 #include <signal.h>
 
+#define BUFF_SIZE 100
+//pour les pipes
+
 void affiche_cmd(char *argv[])
 {
 	unsigned int i;
@@ -309,7 +312,7 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	len = 1;
 	argv[0] = malloc(sizeof(char **) * 2);
 	i = skip_space(s, 0);
-	i = (unsigned int) parse_line_redir(&s[i], argv[0], in, out);
+	i += (unsigned int) parse_line_redir(&s[i], argv[0], in, out); // += et pas juste =
 	i = skip_space(s, i);
 	
 	while(s[i] == '|')
@@ -317,7 +320,7 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 		++i;
 		argv[0] = realloc(argv[0], sizeof(char **) * (len + 2));
 		i = skip_space(s, i);
-		i = (unsigned int) parse_line_redir(&s[i], &argv[0][len], &unused, out);
+		i += (unsigned int) parse_line_redir(&s[i], &argv[0][len], &unused, out);
 		i = skip_space(s, i);
 		++len;
 	}
@@ -334,38 +337,89 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
  *	command 2 < command 1
  */
 
-//test : ls -l|pipe  //  cat < txt.txt | cat > michel.txt
-int redir_cmd(char **argv[], char *in, char *out) //pipe_cmd
+//tests : ls -l|pipe  //  cat < txt.txt | cat > michel.txt
+
+char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 {
-	unsigned len;
-	len = 0;
+	unsigned int size;
+	int i;
 	
-	++len;
-	while(argv[len])
+	char *buff = malloc(sizeof(char) * BUFF_SIZE);
+	
+	char *ret;
+	
+	ret = malloc(1);
+	size = 0;
+	
+	while ( (i = (int) read(fd, buff, BUFF_SIZE) ) > 0)
 	{
-		if(len == 0) // premiere commande
-			redir_cmd(argv[len],in,NULL);
+		ret = realloc(ret, size + i + 1);
 		
+		memcpy(&ret[size], buff, (size_t) i);
 		
-		// faire pipes entre celui davant et celui dapres
-		int fin = open(in,O_RDONLY);
-		dup2(fin,STDIN_FILENO);
-		
-		int fout = open(out,O_WRONLY|O_TRUNC);
-		dup2(fout,STDOUT_FILENO);
-		
-		execvp(argv[len][0],argv[len]);
-		
-		execvp(argv[len][0],argv[len]);
-		
-		if (!argv[len+1]) // derniere commande
-			redir_cmd(argv[len],NULL,out);
-		
-		++len;
+		size += i;
 	}
 	
-	return 0;
+	if (!size)
+	{
+		free(ret);
+		return NULL;
+	}
+	
+	ret[size] = '\0';
+	return ret;
 }
+
+int redir_cmd_pipe(char **argv[], char *in, char *out)
+{
+	int fd[2];
+	char *buff;
+	
+	if(pipe(fd))
+	{
+		return 0;
+	}
+	
+	if (fork() == 0) //fils
+	{
+		close(fd[0]);
+		
+		dup2(fd[1], STDOUT_FILENO);
+		
+		close(fd[1]);
+		
+		execvp(argv[0], argv); //prob
+		
+		/*
+		if(out && in) // write only dans le out
+		{
+			int fin = open(in,O_RDONLY);
+			int fout = open(out,O_WRONLY);
+			int fildes[2];
+			fildes[0] = fin;
+			fildes[1] = fout;
+			pipe(fildes);
+			
+			pid_t p = fork();
+			int status;
+			if (p == 0)
+				execvp(argv[0],argv);
+			else
+				wait(&status);
+		}
+		*/
+		
+	}
+	
+	close(fd[1]);
+	
+	buff = read_from_fd(fd[0]);
+	
+	close(fd[0]);
+	
+	return buff;
+}
+
 
 
 int main(int argc, char **argv)
@@ -405,7 +459,6 @@ int main(int argc, char **argv)
 		
 		char *s = malloc(1024 * sizeof(char));
 		
-		
 		char *in;
 		char *out;
 		
@@ -421,15 +474,17 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-// 		parse_line_redir(s,&tab, &in, &out);
 		parse_line_pipes(s,&tab, &in, &out);
 		
-// 		affiche_cmd_pipe(tab);
+		redir_cmd_pipe(tab, in, out);
 		
+		/*
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
 			pipe_cmd(tab, in, out);
+		*/
+		
 		printf("\n");
 		
 		free(dir);
