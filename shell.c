@@ -443,7 +443,6 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		
 // 		parse_line_redir(s,&tab, &in, &out);
 		
 		parse_line_pipes(s,&tab, &in, &out);
