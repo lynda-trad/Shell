@@ -375,7 +375,7 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 	return ret;
 }
 
-char *redir_cmd_pipe_first(char **argv[], char *in)
+char *redir_cmd_pipe_first(char **argv, char *in)
 {
 	int fd[2];
 	char *buff;
@@ -396,7 +396,7 @@ char *redir_cmd_pipe_first(char **argv[], char *in)
 		
 		close(fd[1]);
 		
-		execvp(argv[0][0], argv[0]);
+		execvp(argv[0], argv);
 		
 		close(fin);
 		
@@ -432,9 +432,61 @@ char *redir_cmd_pipe_first(char **argv[], char *in)
 
 void redir_cmd_pipe(char **argv[], char *in, char *out)
 {
-	if(in || out)
-		printf("%s, redir_cmd_pipe_first",argv[0][0]);
-	//appelle redir_cmd_pipe_first sur argv[0]
+	unsigned int i;
+	
+	int fd_in[2];
+	int fd_out[2];
+	
+	char *buff;
+	
+	buff = redir_cmd_pipe_first(argv[0], in);
+	
+	while (argv[i])
+	{
+		pipe(fd_in);
+		pipe(fd_out);
+		
+		if(!argv[i+1])
+			if(out)
+				printf("faire un redir_cmd_pipe_last");
+		
+		if (fork() == 0)
+		{
+			close(fd_out[0]);					//child doesnt read its output
+			close(fd_in[1]);					//child doesnt write its input
+			
+			dup2(fd_in[0], STDIN_FILENO);			//child binds its input reading to stdin
+			
+			close(fd_in[0]);
+			
+			dup2(fd_out[1], STDOUT_FILENO);		//child binds its input reading to stdin
+			
+			close(fd_out[1]);
+			
+			execvp(argv[i][0], argv[i]);
+		}
+		
+		close(fd_out[1]);						//dad doesnt write child output
+		close(fd_in[0]);						//dad doesnt read child input
+		
+		if (buff)
+		{
+			write(fd_in[1], buff, strlen(buff));	//dad writes to child's input
+			free(buff);
+		}
+		
+		close(fd_in[1]);
+		
+		wait(NULL);
+        
+		buff = read_from_fd(fd_out[0]);			//dad reads what child printed
+		
+		close(fd_out[0]);
+		
+		++i;
+	}
+	
+	printf("%s\n",buff);
 }
 
 
