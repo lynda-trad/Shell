@@ -300,10 +300,8 @@ unsigned int skip_space(const char *s, unsigned int i)
 
 int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 {
-	// slice s en sous tableaux contenant chacun le tableau d'arguments de la commande : command toto | commend2 tata | command3
 	// pipe connects the standard output of the first command to the standard input of the second command
 	
-	//malloc grand tableau puis malloc chaque case pour chaque commande
 	unsigned int i; //case de la chaine s
 	unsigned int len; //length du tableau
 	char *unused; //in possible que pour premiere commande 
