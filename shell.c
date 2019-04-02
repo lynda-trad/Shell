@@ -45,7 +45,8 @@ void set_envi(char **argv[])
 	if(argv[0][0] && argv[0][1])
 	{
 		if(setenv(argv[0][0],argv[0][1], 1) < 0)
-		{	fprintf(stderr,"fail to setenv\n");
+		{
+			fprintf(stderr,"fail to setenv\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -63,7 +64,7 @@ void check_envi(char **argv[])
 			strcpy(argv[0][i], getenv(argv[0][i])); 
 		}
 		++i;
-	}	
+	}
 }
 
 void simple_cmd(char *argv[])
@@ -600,22 +601,21 @@ int main(int argc, char **argv)
 		char *s;
 		char *ex;
 		
-		//envi
-		char **tab; 
-		
-		/*
 		//pipe
 		char ***tab;
 		
 		char *in;
 		char *out;
+		
+		/*
+		// test envi
+		char **tab; 
+		
+		tab = malloc( 100 * sizeof(char*));
 		*/
 		
 		dir = malloc(sizeof(char) * 1024);
 		s = malloc(1024 * sizeof(char));
-		
-		//envi
-		tab = malloc( 100 * sizeof(char*));
 		
 		printf("%s$ ",getcwd(dir,1024));
 		ex = fgets(s,1024,stdin);
@@ -626,23 +626,20 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		/*
 		//test pipe et redir
 		parse_line_pipes(s, &tab, &in, &out);
 // 		redir_cmd_pipe(tab, in, out);
-		which_cmd(s, tab,in,out);
-		*/
-		
-		//test envi
-		parse_line(s,&tab);
+		which_cmd(s, tab, in, out);
 		
 		/*
+		// test envi
 		parse_line(s,&tab);
+		
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
 			simple_cmd(tab);
-		*/		
+		*/
 		
 		printf("\n");
 		
