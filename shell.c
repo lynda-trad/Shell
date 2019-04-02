@@ -12,11 +12,11 @@
 
 static void handler()
 {
-	//ignores the signals CTRL+Z and CTRL+C
+	//ignores les signals CTRL+Z and CTRL+C
 }
 
 void affiche_cmd(char *argv[])
-{
+{ //prints a command
 	unsigned int i;
 	i = 0;
 	
@@ -29,7 +29,7 @@ void affiche_cmd(char *argv[])
 }
 
 void affiche_cmd_pipe(char ***str)
-{
+{ //prints a command that contains a pipe
 	unsigned int i;
 	
 	i = 0;
@@ -41,7 +41,7 @@ void affiche_cmd_pipe(char ***str)
 }
 
 void set_envi(char **argv[])
-{
+{ // sets a value to an environnemental variable
 	if(argv[0][0] && argv[0][1])
 	{
 		if(setenv(argv[0][0],argv[0][1], 1) < 0)
@@ -53,7 +53,7 @@ void set_envi(char **argv[])
 }
 
 void check_envi(char **argv[])
-{
+{ //remplaces occurences of words by the value of the environnemental variable
 	unsigned int i;
 	while(argv[0][i])
 	{	
@@ -68,7 +68,7 @@ void check_envi(char **argv[])
 }
 
 int parse_line(char *s, char **argv[])
-{
+{ // parses the line s
 	unsigned int i;
 	unsigned int len;
 	unsigned int wordl;
@@ -123,7 +123,7 @@ int parse_line(char *s, char **argv[])
 	argv[0] = tmp;
 	
 	
-	//variables d'environnement
+	//environnemental values handling
 	if(envi > 0)
 		set_envi(argv);
 	else if(argv[0][0])
@@ -133,7 +133,7 @@ int parse_line(char *s, char **argv[])
 }
 
 void simple_cmd(char *argv[])
-{
+{ // executes a simple command
 	if(!*argv)
 		return;
 	
@@ -161,8 +161,7 @@ void simple_cmd(char *argv[])
 }
 
 int parse_in_out(char *s, int i, char **in, char **out)
-{
-	
+{ // parses the line to get the in and out for redirections
 	char *debw;
 	unsigned int wordl;
 	
@@ -228,14 +227,15 @@ int parse_in_out(char *s, int i, char **in, char **out)
 }
 
 int parse_line_redir(char *s, char **argv[], char **in, char **out)
-{
+{ //parses a line to get a command that contains redirections
 	unsigned int i;
 	unsigned int len;
-	unsigned int wordl; //length de chaque mot dans la commande
+	unsigned int wordl;
 	unsigned int envi;
 	
-	char **tmp; 		// argv
-	char *debw; 		// debut du mot quon va memcpy
+	char **tmp;
+	char *debw;
+	
 	i = 0;
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
@@ -293,7 +293,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	tmp[len] = NULL;
 	argv[0] = tmp;
 	
-	//variables d'environnement
+	//environnemental values handling
 	if(envi > 0)
 		set_envi(argv);
 	else if(argv[0][0])
@@ -304,7 +304,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 
 
 int redir_cmd(char *argv[], char *in, char *out)
-{
+{ //executes a command that may contain redirections
 	if(in && out)
 	{
 		pid_t p = fork();
@@ -323,7 +323,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 		else
 			wait(&status);
 	}
-	else	if(out) // write only dans le out 
+	else	if(out)
 	{ 
 		pid_t p = fork();
 		int status;
@@ -337,7 +337,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 		else
 			wait(&status);
 	}
-	else if(in) // read only dans le in
+	else if(in)
 	{  
 		pid_t p = fork();
 		int status;
@@ -359,7 +359,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 
 
 unsigned int skip_space(const char *s, unsigned int i)
-{
+{ //skips spaces in a line
 	while ( s[i] == ' ' || s[i] == '\t')
 	{
 		++i;
@@ -368,10 +368,10 @@ unsigned int skip_space(const char *s, unsigned int i)
 }
 
 int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
-{
-	unsigned int i;	//case de la chaine s
-	unsigned int len; 	//length du tableau
-	char *unused; 		//in possible que pour premiere commande 
+{ // parses a line that contains pipes and, sometimes, redirections
+	unsigned int i;
+	unsigned int len;
+	char *unused; 		//in only possible for the first command
 	
 	len = 1;
 	argv[0] = malloc(sizeof(char **) * 2);
@@ -394,7 +394,7 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 }
 
 char *read_from_fd(int fd)
-{
+{ //reads from a file descriptor
 	unsigned int size;
 	int i;
 	char buff[BUFF_SIZE];
@@ -425,7 +425,7 @@ char *read_from_fd(int fd)
 
 
 void redir_cmd_pipe(char **argv[], char *in, char *out)
-{
+{ //executes a command that contains pipes and, sometimes, redirections
 	unsigned int i;
 	
 	int fd_in[2];
@@ -517,8 +517,8 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		
 		close(fd_out[0]);
 		
-		dup2(fd_bkp[0], STDIN_FILENO);			//restoring default input
-		dup2(fd_bkp[1], STDOUT_FILENO);			//restoring default output
+		dup2(fd_bkp[0], STDIN_FILENO);			//restoring standard input
+		dup2(fd_bkp[1], STDOUT_FILENO);			//restoring standard output
 		
 		++i;
 	}
@@ -530,7 +530,7 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 
 
 void which_cmd(char *s, char **argv[], char *in, char *out)
-{
+{ //chooses which function to call to execute a command
 	unsigned int i;
 	unsigned int cmpt;
 	
@@ -553,15 +553,15 @@ void which_cmd(char *s, char **argv[], char *in, char *out)
 
 int main(int argc, char **argv)
 {
-	//ignore CTRL+Z and CTRL+C
+	//ignores CTRL+Z and CTRL+C
 	struct sigaction act;
 	act.sa_handler = &handler;
 	act.sa_flags = SA_RESTART;
 	sigaction(SIGTSTP, &act, NULL);
 	sigaction(SIGINT, &act, NULL);
 	
-	if(argc > 1) // nom de fichier en argument
-	{
+	if(argc > 1) 
+	{ //executes a command from a file put in the arguments
 		char ***tab;
 		
 		char *s = malloc(1024 * sizeof(char));
@@ -591,8 +591,7 @@ int main(int argc, char **argv)
 		free(out);
 	}
 	else while(1)
-	{
-		
+	{ //asks a command to the user
 		char *dir;
 		char *s;
 		char *ex;
@@ -610,13 +609,11 @@ int main(int argc, char **argv)
 		printf("%s$ ",getcwd(dir,1024));
 		ex = fgets(s,1024,stdin);
 		
-		if(ex == 0) //Quit with CTRL+D
-		{
+		if(ex == 0) 
+		{ //quit with CTRL+D
 			printf("\n");
 			break;
 		}
-		
-		//test pipe et redir
 		
 		parse_line_pipes(s, &tab, &in, &out);
 		which_cmd(s, tab, in, out);
