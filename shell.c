@@ -11,7 +11,7 @@
 
 static void handler()
 {
-	//ignores les signals CTRL+Z and CTRL+C
+	//ignores the signals CTRL+Z and CTRL+C
 }
 
 void affiche_cmd(char *argv[])
