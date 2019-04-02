@@ -12,7 +12,7 @@
 
 static void handler()
 {
-	//ignore the signal
+	//ignores the signals CTRL+Z and CTRL+C
 }
 
 void affiche_cmd(char *argv[])
@@ -40,7 +40,16 @@ void affiche_cmd_pipe(char ***str)
 	}
 }
 
-int parse_line(char *s, char * *argv[])
+void set_envi(char **argv[])
+{
+	if(argv[0][0] && argv[0][1])
+	{
+		if(setenv(argv[0][0],argv[0][1], 1) < 0)
+			fprintf(stderr,"fail to setenv\n");
+	}
+}
+
+int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 {
 	unsigned int i;
 	unsigned int len;
@@ -48,13 +57,17 @@ int parse_line(char *s, char * *argv[])
 	char **tmp;
 	char *debw;
 	
+	unsigned int envi;
+	
 	i = 0;
 	len = 0;
 	tmp = malloc(sizeof(char*) * 1);
 	
+	envi = 0;
+	
 	while(s[i] && s[i] != '\n')
 	{
-		while (s[i] ==' ')
+		while (s[i] == ' ')
 		{
 			++i;
 		}
@@ -62,11 +75,14 @@ int parse_line(char *s, char * *argv[])
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ' && s[i] != '\n')
+		while(s[i] && s[i] != ' ' && s[i] != '\n' && s[i] != '=')
 		{
 			++wordl;
 			++i;
 		}
+		
+		if(s[i] == '=')
+			++envi;
 		
 		if(wordl)
 		{
@@ -84,6 +100,9 @@ int parse_line(char *s, char * *argv[])
 	
 	tmp[len] = NULL;
 	argv[0] = tmp;
+	
+	if(envi > 0)
+		set_envi(argv);
 	
 	return len;
 }
