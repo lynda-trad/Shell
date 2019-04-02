@@ -360,7 +360,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 
 unsigned int skip_space(const char *s, unsigned int i)
 {
-	while (s[i] == ' ' || s[i] == '\t')
+	while ( s[i] == ' ' || s[i] == '\t')
 	{
 		++i;
 	}
@@ -562,32 +562,37 @@ int main(int argc, char **argv)
 	
 	if(argc > 1) // nom de fichier en argument
 	{
-		char *dir = malloc(sizeof(char) * 1024);
-		
-		char **tab = malloc( 100 * sizeof(char*));
+		char ***tab;
 		
 		char *s = malloc(1024 * sizeof(char));
 		
-		int fd = open(argv[1],O_RDONLY);
-		if (fd < 0)
-			exit(EXIT_FAILURE);
+		char *in;
+		char *out;
 		
-		printf("%s$ ",getcwd(dir,1024));
+		int fd;
+		fd = open(argv[1],O_RDONLY);
+		
+		if (fd < 0)
+		{	
+			fprintf(stderr,"can not open file");
+			exit(EXIT_FAILURE);
+		}
 		
 		read(fd, s, 1024);
 		
-		parse_line(s,&tab);
+		parse_line_pipes(s, &tab, &in, &out);
+		which_cmd(s, tab, in, out);
 		
-		affiche_cmd(tab);
+		printf("\n");
 		
-		simple_cmd(tab);
-		
-		free(dir);
 		free(tab);
 		free(s);
+		free(in);
+		free(out);
 	}
 	else while(1)
 	{
+		
 		char *dir;
 		char *s;
 		char *ex;
@@ -610,6 +615,8 @@ int main(int argc, char **argv)
 			printf("\n");
 			break;
 		}
+		
+		//test pipe et redir
 		
 		parse_line_pipes(s, &tab, &in, &out);
 		which_cmd(s, tab, in, out);
