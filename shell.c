@@ -46,6 +46,24 @@ void set_envi(char **argv[])
 	{
 		if(setenv(argv[0][0],argv[0][1], 1) < 0)
 			fprintf(stderr,"fail to setenv\n");
+		else
+			printf("%s\n",getenv(argv[0][0]));
+	}
+}
+
+void check_envi(char **argv[])
+{
+	unsigned int i;
+	while(argv[0][i])
+	{	
+		if(getenv(argv[0][i]))
+		{
+			//change argv[0][i] en la valeur
+			argv[0][i] = realloc(argv[0][i], sizeof(char) * strlen(getenv(argv[0][i])) + 1);
+			strcpy(argv[0][i], getenv(argv[0][i])); 
+		}
+		printf("%s\n",argv[0][i]);
+		++i;
 	}
 }
 
@@ -82,7 +100,10 @@ int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 		}
 		
 		if(s[i] == '=')
+		{
 			++envi;
+			++i;
+		}
 		
 		if(wordl)
 		{
@@ -103,6 +124,8 @@ int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 	
 	if(envi > 0)
 		set_envi(argv);
+	if(argv[0][0])
+		check_envi(argv);
 	
 	return len;
 }
@@ -572,20 +595,28 @@ int main(int argc, char **argv)
 	else while(1)
 	{
 		
-		char *dir = malloc(sizeof(char) * 1024);
+		char *dir;
+		char *s;
+		char *ex;
 		
-// 		char **tab = malloc( 100 * sizeof(char*));
-		char ***tab = malloc( 100 * sizeof(char**));
+		//envi
+		char **tab; 
 		
-		char *s = malloc(1024 * sizeof(char));
+		/*
+		//pipe
+		char ***tab;
 		
 		char *in;
 		char *out;
+		*/
 		
-		char *ex;
+		dir = malloc(sizeof(char) * 1024);
+		s = malloc(1024 * sizeof(char));
+		
+		//envi
+		tab = malloc( 100 * sizeof(char*));
 		
 		printf("%s$ ",getcwd(dir,1024));
-		
 		ex = fgets(s,1024,stdin);
 		
 		if(ex == 0) //Quit with CTRL+D
@@ -594,10 +625,16 @@ int main(int argc, char **argv)
 			break;
 		}
 		
+		/*
+		//test pipe et redir
 		parse_line_pipes(s, &tab, &in, &out);
-		redir_cmd_pipe(tab, in, out);
-// 		which_cmd(s, tab,in,out);
+// 		redir_cmd_pipe(tab, in, out);
+		which_cmd(s, tab,in,out);
+		*/
 		
+		//test envi
+		parse_line(s,&tab);
+		simple_cmd(tab);
 		/*
 		parse_line(s,&tab);
 		if(in || out)
