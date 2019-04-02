@@ -328,10 +328,19 @@ int redir_cmd(char *argv[], char *in, char *out)
 		int status;
 		if (p == 0)
 		{
-			int fout = open(out,O_WRONLY|O_TRUNC);
-			dup2(fout,STDOUT_FILENO);
-			execvp(argv[0],argv);
-			close(fout);
+			int fout;
+			fout = open(out,O_WRONLY|O_TRUNC);
+			if(fout > 0)
+			{
+				dup2(fout,STDOUT_FILENO);
+				execvp(argv[0],argv);
+				close(fout);
+			}
+			else
+			{
+				fprintf(stderr,"open failed\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 		else
 			wait(&status);
@@ -342,10 +351,19 @@ int redir_cmd(char *argv[], char *in, char *out)
 		int status;
 		if (p == 0)
 		{
-			int fin = open(in,O_RDONLY);
-			dup2(fin,STDIN_FILENO);
-			execvp(argv[0],argv);
-			close(fin);
+			int fin;
+			fin = open(in,O_RDONLY);
+			if(fin > 0)
+			{
+				dup2(fin,STDIN_FILENO);
+				execvp(argv[0],argv);
+				close(fin);
+			}
+			else
+			{
+				fprintf(stderr,"open failed\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 		else
 			wait(&status);
@@ -355,7 +373,6 @@ int redir_cmd(char *argv[], char *in, char *out)
 	
 	return 0;
 }
-
 
 unsigned int skip_space(const char *s, unsigned int i)
 { //skips spaces in a line
