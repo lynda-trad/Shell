@@ -328,7 +328,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 		int status;
 		if (p == 0)
 		{
-			int fout = open(out,O_WRONLY|O_TRUNC);
+			int fout = open(out,O_WRONLY|O_TRUNC|O_CREAT);
 			dup2(fout,STDOUT_FILENO);
 			execvp(argv[0],argv);
 			close(fout);
@@ -488,7 +488,7 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		{
 			if(!argv[i+1] && out)
 			{
-				fout = open(out,O_WRONLY|O_TRUNC);
+				fout = open(out,O_WRONLY|O_TRUNC|O_CREAT);
 				
 				if(fout > 0)
 				{
