@@ -313,11 +313,19 @@ int redir_cmd(char *argv[], char *in, char *out)
 			int fin = open(in,O_RDONLY);
 			int fout = open(out,O_WRONLY|O_TRUNC);
 			
-			dup2(fin,STDIN_FILENO);
-			dup2(fout,STDOUT_FILENO);
-			execvp(argv[0],argv);
-			close(fin);
-			close(fout);
+			if(fout > 0 && fin > 0)
+			{
+				dup2(fin,STDIN_FILENO);
+				dup2(fout,STDOUT_FILENO);
+				execvp(argv[0],argv);
+				close(fin);
+				close(fout);
+			}
+			else
+			{
+				fprintf(stderr,"open failed\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 		else
 			wait(&status);
