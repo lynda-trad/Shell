@@ -8,7 +8,6 @@
 #include <signal.h>
 
 #define BUFF_SIZE 100
-//pour les pipes
 
 static void handler()
 {
