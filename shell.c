@@ -349,10 +349,11 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 	unsigned int size;
 	int i;
 	
-	char *buff = malloc(sizeof(char) * BUFF_SIZE);
+	char *buff;
 	
 	char *ret;
 	
+	buff = malloc(sizeof(char) * BUFF_SIZE);
 	ret = malloc(1);
 	size = 0;
 	
@@ -387,11 +388,13 @@ char *redir_cmd_pipe_first(char **argv, char *in)
 	
 	if (fork() == 0)
 	{
+		int fin ;
+		fin = open(in,O_RDONLY);
+		
 		close(fd[0]);
 		
 		dup2(fd[1], STDOUT_FILENO);
 		
-		int fin = open(in,O_RDONLY);
 		dup2(fin,STDIN_FILENO);
 		
 		close(fd[1]);
@@ -448,7 +451,7 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	
 	buff = redir_cmd_pipe_first(argv[0], in);
 	
-	while (argv[i])
+	while (argv[i]) // pr pipe_last while(argv[i+1]) ?
 	{
 		if(pipe(fd_in) || pipe(fd_out))
 			return;
@@ -540,8 +543,8 @@ int main(int argc, char **argv)
 		
 		char *dir = malloc(sizeof(char) * 1024);
 		
-		char ***tab = malloc( 100 * sizeof(char**));
 // 		char **tab = malloc( 100 * sizeof(char*));
+		char ***tab = malloc( 100 * sizeof(char**));
 		
 		char *s = malloc(1024 * sizeof(char));
 		
