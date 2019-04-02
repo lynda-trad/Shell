@@ -328,7 +328,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 		int status;
 		if (p == 0)
 		{
-			int fout = open(out,O_WRONLY|O_TRUNC|O_CREAT);
+			int fout = open(out,O_WRONLY|O_TRUNC);
 			dup2(fout,STDOUT_FILENO);
 			execvp(argv[0],argv);
 			close(fout);
