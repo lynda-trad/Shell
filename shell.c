@@ -293,6 +293,8 @@ int redir_cmd(char *argv[], char *in, char *out)
 		else
 			wait(&status);
 	}
+	else 
+		simple_cmd(argv);
 	return 0;
 }
 
@@ -331,16 +333,6 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	argv[0][len] = NULL;
 	return i;
 }
-
-// pipe connects the standard output of the first command to the standard input of the second command
-
-/*	command 1 | command 2
- *	
- *	équivaut a
- * 
- *	command 1 > command 2
- *	command 2 < command 1
- */
 
 //tests : ls -l|pipe  //  cat < txt.txt | cat > michel.txt
 
@@ -414,25 +406,6 @@ char *redir_cmd_pipe_first(char **argv, char *in)
 	return buff;
 }
 
-/*
-		if(out && in) // write only dans le out
-		{
-			int fin = open(in,O_RDONLY);
-			int fout = open(out,O_WRONLY);
-			int fildes[2];
-			fildes[0] = fin;
-			fildes[1] = fout;
-			pipe(fildes);
-			
-			pid_t p = fork();
-			int status;
-			if (p == 0)
-				execvp(argv[0],argv);
-			else
-				wait(&status);
-		}
-*/
-
 void redir_cmd_pipe(char **argv[], char *in, char *out)
 {
 	unsigned int i;
@@ -504,6 +477,28 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	}
 }
 
+void which_cmd(char *s, char **argv[], char *in, char *out)
+{
+	unsigned int i;
+	unsigned int cmpt;
+	
+	i = 0;
+	cmpt = 0;
+	
+	while(s[i])
+	{
+		if(s[i] == '|')
+			++cmpt;
+		++i;
+	}
+	
+	if(cmpt != 0)
+		redir_cmd_pipe(argv, in, out);
+	else
+		redir_cmd(argv[0], in, out);
+}
+
+
 
 int main(int argc, char **argv)
 {
@@ -565,8 +560,8 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		parse_line_pipes(s,&tab, &in, &out);
-		redir_cmd_pipe(tab, in, out);
+		parse_line_pipes(s, &tab, &in, &out);
+		which_cmd(s, tab, in, out);
 		
 		/*
 		parse_line(s,&tab);
