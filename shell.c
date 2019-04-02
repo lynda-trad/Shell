@@ -74,7 +74,7 @@ void simple_cmd(char *argv[])
 	
 	if(!strcmp(argv[0],"exit"))
 	{
-		exit(EXIT_FAILURE);
+		exit(EXIT_SUCCESS);
 	}
 	else 
 	if(!strcmp(argv[0],"cd"))
@@ -95,7 +95,7 @@ void simple_cmd(char *argv[])
 	}
 }
 
-int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
+int parse_line(char *s, char **argv[])
 {
 	unsigned int i;
 	unsigned int len;
@@ -150,6 +150,8 @@ int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 	tmp[len] = NULL;
 	argv[0] = tmp;
 	
+	
+	//variables d'environnement
 	if(envi > 0)
 		set_envi(argv);
 	else if(argv[0][0])
@@ -157,6 +159,7 @@ int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 		check_envi(argv);
 		simple_cmd(argv[0]);
 	}
+	
 	return len;
 }
 
@@ -168,7 +171,7 @@ int parse_in_out(char *s, int i, char **in, char **out)
 	
 	wordl = 0;
 	
-	if(s[i] == '<') //in
+	if(s[i] == '<')
 	{ //gives input to a command
 		++i;
 		
@@ -196,7 +199,7 @@ int parse_in_out(char *s, int i, char **in, char **out)
 			in[0][wordl]= '\0';
 		}
 	}
-	else if(s[i] == '>') //out
+	else if(s[i] == '>')
 	{ //directs the output of a command into a file
 		++i;
 		
@@ -241,7 +244,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	in[0] = NULL;
 	out[0] = NULL;
 	
-	while(s[i] && s[i] != '\n')
+	while(s[i] && s[i] != '\n' && s[i] != '|')
 	{
 		while (s[i] == ' ')
 		{
@@ -261,7 +264,7 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ' && s[i] != '\n')
+		while(s[i] && s[i] != ' ' && s[i] != '\n' && s[i] != '|')
 		{
 			++wordl;
 			++i;
@@ -339,6 +342,7 @@ int redir_cmd(char *argv[], char *in, char *out)
 	}
 	else 
 		simple_cmd(argv);
+	
 	return 0;
 }
 
@@ -410,40 +414,6 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 	return ret;
 }
 
-/*
-char *redir_cmd_pipe_first(char **argv, char *in)
-{
-	int fd[2];
-	char *buff;
-	
-	if(pipe(fd))
-	{
-		return NULL;
-	}
-	
-	if (fork() == 0)
-	{
-		
-		close(fd[0]);
-		
-		dup2(fd[1], STDOUT_FILENO);
-		
-		dup2(fin,STDIN_FILENO);
-		
-		close(fd[1]);
-		
-		execvp(argv[0], argv);
-		
-	}
-	
-	close(fd[1]);
-	
-	buff = read_from_fd(fd[0]);
-	
-	close(fd[0]);
-	
-	return buff;
-}*/
 
 void redir_cmd_pipe(char **argv[], char *in, char *out)
 {
@@ -460,8 +430,8 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	
 	i = 0;
 	
-	fd_bkp[0] = dup(STDIN_FILENO);              //backup of standard input
-	fd_bkp[1] = dup(STDOUT_FILENO);             //backup of standard output
+	fd_bkp[0] = dup(STDIN_FILENO);				//backup of standard input
+	fd_bkp[1] = dup(STDOUT_FILENO);				//backup of standard output
 	
 	buff = NULL;
 	
@@ -514,13 +484,13 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		close(fd_in[1]);
 		
 		wait(NULL);
-        
+		
 		buff = read_from_fd(fd_out[0]);			//dad reads what child printed
 		
 		close(fd_out[0]);
 		
-		dup2(fd_bkp[0], STDIN_FILENO);          //restoring default input
-		dup2(fd_bkp[1], STDOUT_FILENO);         //restoring default output
+		dup2(fd_bkp[0], STDIN_FILENO);			//restoring default input
+		dup2(fd_bkp[1], STDOUT_FILENO);			//restoring default output
 		
 		++i;
 	}
@@ -530,10 +500,32 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		if(out)
 			printf("redir_cmd_pipe_last");
 		else
-			printf("%s\n",buff);
+			printf("%s",buff);
 	}
 }
 
+/*
+void which_parse(char *s, char ***argv[], char **in, char **out)
+{
+	unsigned int i;
+	unsigned int cmpt;
+	
+	i = 0;
+	cmpt = 0;
+	
+	while(s[i])
+	{
+		if(s[i] == '|' || s[i] == '<' || s[i] == '>')
+			++cmpt;
+		++i;
+	}
+	
+	if(cmpt != 0)
+		parse_line_pipes(s, argv, in, out);
+	else
+		parse_line(s, argv[0]);
+}
+*/
 
 
 void which_cmd(char *s, char **argv[], char *in, char *out)
@@ -556,7 +548,6 @@ void which_cmd(char *s, char **argv[], char *in, char *out)
 	else
 		redir_cmd(argv[0], in, out);
 }
-
 
 
 int main(int argc, char **argv)
@@ -614,6 +605,8 @@ int main(int argc, char **argv)
 		tab = malloc( 100 * sizeof(char*));
 		*/
 		
+		tab = malloc( 100 * sizeof(char**));
+		
 		dir = malloc(sizeof(char) * 1024);
 		s = malloc(1024 * sizeof(char));
 		
@@ -627,8 +620,12 @@ int main(int argc, char **argv)
 		}
 		
 		//test pipe et redir
+
 		parse_line_pipes(s, &tab, &in, &out);
 // 		redir_cmd_pipe(tab, in, out);
+		
+		//test des which
+// 		which_parse(s, &tab, &in, &out);
 		which_cmd(s, tab, in, out);
 		
 		/*
@@ -646,6 +643,8 @@ int main(int argc, char **argv)
 		free(dir);
 		free(tab);
 		free(s);
+		free(in);
+		free(out);
 	}
 	exit(EXIT_SUCCESS);
 }
