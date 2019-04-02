@@ -45,9 +45,9 @@ void set_envi(char **argv[])
 	if(argv[0][0] && argv[0][1])
 	{
 		if(setenv(argv[0][0],argv[0][1], 1) < 0)
-			fprintf(stderr,"fail to setenv\n");
-		else
-			printf("%s\n",getenv(argv[0][0]));
+		{	fprintf(stderr,"fail to setenv\n");
+			exit(EXIT_FAILURE);
+		}
 	}
 }
 
@@ -62,8 +62,35 @@ void check_envi(char **argv[])
 			argv[0][i] = realloc(argv[0][i], sizeof(char) * strlen(getenv(argv[0][i])) + 1);
 			strcpy(argv[0][i], getenv(argv[0][i])); 
 		}
-		printf("%s\n",argv[0][i]);
 		++i;
+	}	
+}
+
+void simple_cmd(char *argv[])
+{
+	if(!*argv)
+		return;
+	
+	if(!strcmp(argv[0],"exit"))
+	{
+		exit(EXIT_FAILURE);
+	}
+	else 
+	if(!strcmp(argv[0],"cd"))
+	{
+		if(argv[1])
+			chdir(argv[1]);
+	}
+	else
+	{
+		pid_t p = fork();
+		int status;
+		if(p == 0)
+		{
+			execvp(argv[0],argv);
+		}
+		else
+			wait(&status);
 	}
 }
 
@@ -124,38 +151,12 @@ int parse_line(char *s, char **argv[]) //modifs pour variables d'envi
 	
 	if(envi > 0)
 		set_envi(argv);
-	if(argv[0][0])
+	else if(argv[0][0])
+	{
 		check_envi(argv);
-	
+		simple_cmd(argv[0]);
+	}
 	return len;
-}
-
-void simple_cmd(char *argv[])
-{
-	if(!*argv)
-		return;
-	
-	if(!strcmp(argv[0],"exit"))
-	{
-		exit(EXIT_FAILURE);
-	}
-	else 
-	if(!strcmp(argv[0],"cd"))
-	{
-		if(argv[1])
-			chdir(argv[1]);
-	}
-	else
-	{
-		pid_t p = fork();
-		int status;
-		if(p == 0)
-		{
-			execvp(argv[0],argv);
-		}
-		else
-			wait(&status);
-	}
 }
 
 int parse_in_out(char *s, int i, char **in, char **out)
@@ -634,7 +635,7 @@ int main(int argc, char **argv)
 		
 		//test envi
 		parse_line(s,&tab);
-		simple_cmd(tab);
+		
 		/*
 		parse_line(s,&tab);
 		if(in || out)
