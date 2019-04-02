@@ -67,34 +67,6 @@ void check_envi(char **argv[])
 	}
 }
 
-void simple_cmd(char *argv[])
-{
-	if(!*argv)
-		return;
-	
-	if(!strcmp(argv[0],"exit"))
-	{
-		exit(EXIT_SUCCESS);
-	}
-	else 
-	if(!strcmp(argv[0],"cd"))
-	{
-		if(argv[1])
-			chdir(argv[1]);
-	}
-	else
-	{
-		pid_t p = fork();
-		int status;
-		if(p == 0)
-		{
-			execvp(argv[0],argv);
-		}
-		else
-			wait(&status);
-	}
-}
-
 int parse_line(char *s, char **argv[])
 {
 	unsigned int i;
@@ -155,12 +127,37 @@ int parse_line(char *s, char **argv[])
 	if(envi > 0)
 		set_envi(argv);
 	else if(argv[0][0])
-	{
 		check_envi(argv);
-// 		simple_cmd(argv[0]);
-	}
 	
 	return len;
+}
+
+void simple_cmd(char *argv[])
+{
+	if(!*argv)
+		return;
+	
+	if(!strcmp(argv[0],"exit"))
+	{
+		exit(EXIT_SUCCESS);
+	}
+	else 
+	if(!strcmp(argv[0],"cd"))
+	{
+		if(argv[1])
+			chdir(argv[1]);
+	}
+	else
+	{
+		pid_t p = fork();
+		int status;
+		if(p == 0)
+		{
+			execvp(argv[0],argv);
+		}
+		else
+			wait(&status);
+	}
 }
 
 int parse_in_out(char *s, int i, char **in, char **out)
@@ -379,7 +376,7 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	len = 1;
 	argv[0] = malloc(sizeof(char **) * 2);
 	i = skip_space(s, 0);
-	i += (unsigned int) parse_line_redir(&s[i], argv[0], in, out); // += et pas juste =
+	i += (unsigned int) parse_line_redir(&s[i], argv[0], in, out);
 	i = skip_space(s, i);
 	
 	while(s[i] == '|')
@@ -396,9 +393,7 @@ int parse_line_pipes(char *s, char ***argv[], char **in, char **out)
 	return i;
 }
 
-//tests : ls -l|pipe  //  cat < txt.txt | cat > michel.txt
-
-char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
+char *read_from_fd(int fd)
 {
 	unsigned int size;
 	int i;
@@ -490,7 +485,8 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		close(fd_out[1]);						//dad doesnt write child output
 		close(fd_in[0]);						//dad doesnt read child input
 		
-		if (buff){
+		if (buff)
+		{
 			if(!argv[i+1] && out)
 			{
 				fout = open(out,O_WRONLY|O_TRUNC);
@@ -512,6 +508,7 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 				free(buff);
 			}
 		}
+		
 		close(fd_in[1]);
 		
 		wait(NULL);
@@ -530,30 +527,6 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		printf("%s",buff);
 	
 }
-
-
-/*
-void which_parse(char *s, char ***argv[], char **in, char **out)
-{
-	unsigned int i;
-	unsigned int cmpt;
-	
-	i = 0;
-	cmpt = 0;
-	
-	while(s[i])
-	{
-		if(s[i] == '|' || s[i] == '<' || s[i] == '>')
-			++cmpt;
-		++i;
-	}
-	
-	if(cmpt != 0)
-		parse_line_pipes(s, argv, in, out);
-	else
-		parse_line(s, argv[0]);
-}
-*/
 
 
 void which_cmd(char *s, char **argv[], char *in, char *out)
@@ -615,23 +588,14 @@ int main(int argc, char **argv)
 	}
 	else while(1)
 	{
-		
 		char *dir;
 		char *s;
 		char *ex;
 		
-		//pipe
 		char ***tab;
 		
 		char *in;
 		char *out;
-		
-		/*
-		// test envi
-		char **tab; 
-		
-		tab = malloc( 100 * sizeof(char*));
-		*/
 		
 		tab = malloc( 100 * sizeof(char**));
 		
@@ -647,24 +611,8 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-		//test pipe et redir
-		
 		parse_line_pipes(s, &tab, &in, &out);
-// 		redir_cmd_pipe(tab, in, out);
-		
-		//test des which
-// 		which_parse(s, &tab, &in, &out);
 		which_cmd(s, tab, in, out);
-		
-		/*
-		// test envi
-		parse_line(s,&tab);
-		
-		if(in || out)
-			redir_cmd(*tab,in,out);
-		else
-			simple_cmd(tab);
-		*/
 		
 		printf("\n");
 		
