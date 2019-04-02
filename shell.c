@@ -340,12 +340,10 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 {
 	unsigned int size;
 	int i;
-	
-	char *buff;
+	char buff[BUFF_SIZE];
 	
 	char *ret;
 	
-	buff = malloc(sizeof(char) * BUFF_SIZE);
 	ret = malloc(1);
 	size = 0;
 	
@@ -368,6 +366,7 @@ char *read_from_fd(int fd) //pour attraper ce quil y a au bout du pipe
 	return ret;
 }
 
+/*
 char *redir_cmd_pipe_first(char **argv, char *in)
 {
 	int fd[2];
@@ -380,8 +379,6 @@ char *redir_cmd_pipe_first(char **argv, char *in)
 	
 	if (fork() == 0)
 	{
-		int fin ;
-		fin = open(in,O_RDONLY);
 		
 		close(fd[0]);
 		
@@ -393,8 +390,6 @@ char *redir_cmd_pipe_first(char **argv, char *in)
 		
 		execvp(argv[0], argv);
 		
-		close(fin);
-		
 	}
 	
 	close(fd[1]);
@@ -404,7 +399,7 @@ char *redir_cmd_pipe_first(char **argv, char *in)
 	close(fd[0]);
 	
 	return buff;
-}
+}*/
 
 void redir_cmd_pipe(char **argv[], char *in, char *out)
 {
@@ -417,14 +412,32 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	
 	char *buff;
 	
-	i = 1;
+	int fin;
+	
+	i = 0;
 	
 	fd_bkp[0] = dup(STDIN_FILENO);              //backup of standard input
 	fd_bkp[1] = dup(STDOUT_FILENO);             //backup of standard output
 	
-	buff = redir_cmd_pipe_first(argv[0], in);
+	buff = NULL;
 	
-	while (argv[i]) // pr pipe_last while(argv[i+1]) ?
+	if(in)
+	{
+		fin = open(in,O_RDONLY);
+		
+		if(fin > 0)
+		{
+			buff = read_from_fd(fin);
+			close(fin);
+		}
+		else
+		{
+			fprintf(stderr,"open failed\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+	
+	while (argv[i])
 	{
 		if(pipe(fd_in) || pipe(fd_out))
 			return;
@@ -471,11 +484,13 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	if(buff)
 	{
 		if(out)
-			printf("faire un redir_cmd_pipe_last");	
+			printf("redir_cmd_pipe_last");
 		else
 			printf("%s\n",buff);
 	}
 }
+
+
 
 void which_cmd(char *s, char **argv[], char *in, char *out)
 {
@@ -561,7 +576,8 @@ int main(int argc, char **argv)
 		}
 		
 		parse_line_pipes(s, &tab, &in, &out);
-		which_cmd(s, tab, in, out);
+		redir_cmd_pipe(tab, in, out);
+// 		which_cmd(s, tab,in,out);
 		
 		/*
 		parse_line(s,&tab);
