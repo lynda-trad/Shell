@@ -100,10 +100,10 @@ int parse_line(char *s, char **argv[])
 	unsigned int i;
 	unsigned int len;
 	unsigned int wordl;
+	unsigned int envi;
+	
 	char **tmp;
 	char *debw;
-	
-	unsigned int envi;
 	
 	i = 0;
 	len = 0;
@@ -157,7 +157,7 @@ int parse_line(char *s, char **argv[])
 	else if(argv[0][0])
 	{
 		check_envi(argv);
-		simple_cmd(argv[0]);
+// 		simple_cmd(argv[0]);
 	}
 	
 	return len;
@@ -235,6 +235,8 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	unsigned int i;
 	unsigned int len;
 	unsigned int wordl; //length de chaque mot dans la commande
+	unsigned int envi;
+	
 	char **tmp; 		// argv
 	char *debw; 		// debut du mot quon va memcpy
 	i = 0;
@@ -264,9 +266,15 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 		debw = &s[i];
 		wordl = 0;
 		
-		while(s[i] && s[i] != ' ' && s[i] != '\n' && s[i] != '|')
+		while(s[i] && s[i] != ' ' && s[i] != '\n' && s[i] != '|' && s[i] != '=')
 		{
 			++wordl;
+			++i;
+		}
+		
+		if(s[i] == '=')
+		{
+			++envi;
 			++i;
 		}
 		
@@ -287,6 +295,12 @@ int parse_line_redir(char *s, char **argv[], char **in, char **out)
 	
 	tmp[len] = NULL;
 	argv[0] = tmp;
+	
+	//variables d'environnement
+	if(envi > 0)
+		set_envi(argv);
+	else if(argv[0][0])
+		check_envi(argv);
 	
 	return i;
 }
@@ -427,6 +441,7 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	char *buff;
 	
 	int fin;
+	int fout;
 	
 	i = 0;
 	
@@ -475,12 +490,28 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		close(fd_out[1]);						//dad doesnt write child output
 		close(fd_in[0]);						//dad doesnt read child input
 		
-		if (buff)
-		{
-			write(fd_in[1], buff, strlen(buff));	//dad writes to child's input
-			free(buff);
+		if (buff){
+			if(!argv[i+1] && out)
+			{
+				fout = open(out,O_WRONLY|O_TRUNC);
+				
+				if(fout > 0)
+				{
+					write(fout,buff, strlen(buff));
+					close(fout);
+				}
+				else
+				{
+					fprintf(stderr,"open failed\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+			else
+			{
+				write(fd_in[1], buff, strlen(buff));	//dad writes to child's input
+				free(buff);
+			}
 		}
-		
 		close(fd_in[1]);
 		
 		wait(NULL);
@@ -496,13 +527,10 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	}
 	
 	if(buff)
-	{
-		if(out)
-			printf("redir_cmd_pipe_last");
-		else
-			printf("%s",buff);
-	}
+		printf("%s",buff);
+	
 }
+
 
 /*
 void which_parse(char *s, char ***argv[], char **in, char **out)
@@ -620,7 +648,7 @@ int main(int argc, char **argv)
 		}
 		
 		//test pipe et redir
-
+		
 		parse_line_pipes(s, &tab, &in, &out);
 // 		redir_cmd_pipe(tab, in, out);
 		
