@@ -456,10 +456,6 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		if(pipe(fd_in) || pipe(fd_out))
 			return;
 		
-		if(!argv[i+1])
-			if(out)
-				printf("faire un redir_cmd_pipe_last");
-		
 		if (fork() == 0)
 		{
 			close(fd_out[0]);					//child doesnt read its output
@@ -499,7 +495,13 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		++i;
 	}
 	
-	printf("%s\n",buff);
+	if(buff)
+	{
+		if(out)
+			printf("faire un redir_cmd_pipe_last");	
+		else
+			printf("%s\n",buff);
+	}
 }
 
 
