@@ -28,7 +28,7 @@ void affiche_cmd(char *argv[])
 	printf("\n");
 }
 
-void affiche_cmd_pipe(char **str[])
+void affiche_cmd_pipe(char ***str)
 {
 	unsigned int i;
 	
@@ -437,14 +437,21 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 	int fd_in[2];
 	int fd_out[2];
 	
+	int fd_bkp[2];
+	
 	char *buff;
+	
+	i = 1;
+	
+	fd_bkp[0] = dup(STDIN_FILENO);              //backup of standard input
+	fd_bkp[1] = dup(STDOUT_FILENO);             //backup of standard output
 	
 	buff = redir_cmd_pipe_first(argv[0], in);
 	
 	while (argv[i])
 	{
-		pipe(fd_in);
-		pipe(fd_out);
+		if(pipe(fd_in) || pipe(fd_out))
+			return;
 		
 		if(!argv[i+1])
 			if(out)
@@ -482,6 +489,9 @@ void redir_cmd_pipe(char **argv[], char *in, char *out)
 		buff = read_from_fd(fd_out[0]);			//dad reads what child printed
 		
 		close(fd_out[0]);
+		
+		dup2(fd_bkp[0], STDIN_FILENO);          //restoring default input
+		dup2(fd_bkp[1], STDOUT_FILENO);         //restoring default output
 		
 		++i;
 	}
@@ -530,7 +540,7 @@ int main(int argc, char **argv)
 		
 		char *dir = malloc(sizeof(char) * 1024);
 		
-		char ***tab;
+		char ***tab = malloc( 100 * sizeof(char**));
 // 		char **tab = malloc( 100 * sizeof(char*));
 		
 		char *s = malloc(1024 * sizeof(char));
@@ -550,18 +560,16 @@ int main(int argc, char **argv)
 			break;
 		}
 		
-//		parse_line(s,&tab);
 		parse_line_pipes(s,&tab, &in, &out);
-		
+		redir_cmd_pipe(tab, in, out);
 		
 		/*
+		parse_line(s,&tab);
 		if(in || out)
 			redir_cmd(*tab,in,out);
 		else
 			simple_cmd(tab);
-		*/
-		redir_cmd_pipe(tab, in, out);
-		
+		*/		
 		
 		printf("\n");
 		
